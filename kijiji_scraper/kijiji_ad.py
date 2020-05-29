@@ -1,10 +1,8 @@
-
-
 class KijijiAd():
 
     def __init__(self, ad):
-        self.title = ad.find('a', {"class": "title"}).text.strip()
-        self.id = ad['data-listing-id']
+        self.title = ad.find('a', {"class": "cta"}).text.strip()
+        self.id = ad['data-id']
         self.ad = ad
         self.info = {}
 
@@ -13,18 +11,17 @@ class KijijiAd():
 
     def __locate_info(self):
         # Locate ad information
-        self.info["Title"] = self.ad.find('a', {"class": "title"})
-        self.info["Image"] = str(self.ad.find('img'))
-        self.info["Url"] = self.ad.get("data-vip-url")
+        self.info["Title"] = self.ad.find('a', {"class": "cta"})
+        self.info["Image"] = str(self.ad.find('img').get("src"))
+        self.info["Url"] = self.ad.find('a').get("href")
         self.info["Details"] = self.ad.find(
             'div', {"class": "details"})
         self.info["Description"] = self.ad.find(
-            'div', {"class": "description"})
+            'p', {"class": "description"})
         self.info["Date"] = self.ad.find(
-            'span', {"class": "date-posted"})
-        self.info["Location"] = self.ad.find('div', {"class": "location"})
-        self.info["Price"] = self.ad.find('div', {"class": "price"})
-        self.info["DataSource"] = str(self.ad.find('img').get('data-src'))
+            'p', {"class": "timestamp"})
+        self.info["Location"] = self.ad.find('p', {"class": "locale"})
+        self.info["Price"] = self.ad.find('h4', {"class": "price"})
 
     def __parse_info(self):
         # Parse Details and Date information
@@ -37,7 +34,7 @@ class KijijiAd():
         for key, value in self.info.items():
             if value:
                 if key == "Url":
-                    self.info[key] = 'http://www.kijiji.ca' + value
+                    self.info[key] = value
 
                 elif key == "Description":
                     self.info[key] = value.text.strip() \
@@ -46,9 +43,6 @@ class KijijiAd():
                 elif key == "Location":
                     self.info[key] = value.text.strip() \
                         .replace(self.info["Date"], '')
-                    
-                elif key == "Image":
-                    self.info[key] = '<img src =\"' + (self.info["DataSource"]) + '\"/>'
 
-                elif key not in ["DataSource", "Details", "Date"]:
+                elif key not in ["Image", "Details", "Date"]:
                     self.info[key] = value.text.strip()

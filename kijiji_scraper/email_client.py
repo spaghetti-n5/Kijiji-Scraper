@@ -5,9 +5,8 @@ from email.mime.text import MIMEText
 class EmailClient():
 
     def __init__(self, email_config):
-        self.from_email = email_config.get("from")
-        self.username = email_config.get("username")
-        self.password = email_config.get("password")
+        self.sender = email_config.get("sender")
+        self.passwd = email_config.get("password")
         self.receiver = email_config.get("receiver")
         self.smtp_server = email_config.get("smtp server")
         self.smtp_port = email_config.get("smtp port")
@@ -19,13 +18,13 @@ class EmailClient():
 
         msg = MIMEText(body, 'html')
         msg['Subject'] = subject
-        msg['From'] = self.from_email
+        msg['From'] = self.sender
         msg['To'] = self.receiver
 
         server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)
 
         server.ehlo()
-        server.login(self.username, self.password)
+        server.login(self.sender, self.passwd)
         server.send_message(msg)
 
         server.quit()

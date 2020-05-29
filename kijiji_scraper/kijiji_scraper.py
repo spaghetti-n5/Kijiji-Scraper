@@ -8,7 +8,7 @@ from pathlib import Path
 class KijijiScraper():
 
     def __init__(self, filename="ads.json"):
-        self.filepath = Path().absolute().joinpath(filename) if filename else None
+        self.filepath = Path().absolute().joinpath(filename)
         self.all_ads = {}
         self.new_ads = {}
 
@@ -19,24 +19,20 @@ class KijijiScraper():
 
     # Reads given file and creates a dict of ads in file
     def load_ads(self):
-        # If filepath is None, just skip local file
-        if self.filepath:
-            # If the file doesn't exist create it
-            if not self.filepath.exists():
-                ads_file = self.filepath.open(mode='w')
-                ads_file.write("{}")
-                ads_file.close()
-                return
+        # If the file doesn't exist create it
+        if not self.filepath.exists():
+            ads_file = self.filepath.open(mode='w')
+            ads_file.write("{}")
+            ads_file.close()
+            return
 
-            with self.filepath.open(mode="r") as ads_file:
-                self.all_ads = json.load(ads_file)
+        with self.filepath.open(mode="r") as ads_file:
+            self.all_ads = json.load(ads_file)
 
     # Save ads to file
     def save_ads(self):
-        # If filepath is None, just skip local file
-        if self.filepath:
-            with self.filepath.open(mode="w") as ads_file:
-                json.dump(self.all_ads, ads_file)
+        with self.filepath.open(mode="w") as ads_file:
+            json.dump(self.all_ads, ads_file)
 
     # Set exclude list
     def set_exclude_list(self, exclude_words):
@@ -51,7 +47,6 @@ class KijijiScraper():
             # Get the html data from the URL
             page = requests.get(url)
             soup = BeautifulSoup(page.content, "html.parser")
-
             # If the email title doesnt exist pull it from the html data
             if email_title is None:
                 email_title = self.get_email_title(soup)
@@ -60,31 +55,41 @@ class KijijiScraper():
             self.find_ads(soup)
 
             # Set url for next page of ads
-            url = soup.find('a', {'title': 'Next'})
-            if url:
-                url = 'https://www.kijiji.ca' + url['href']
+            url = soup.find('a', {'title': 'Vai alla pagina successiva'})
+
+            if url == None:
+                break
+
+            try:
+                kk = url['href']
+            except:
+                kk = url['data-href']
+
+            url = 'https://www.kijiji.it' + kk
+            # print(url)
 
         return self.new_ads, email_title
 
     def find_ads(self, soup):
         # Finds all ad trees in page html.
-        kijiji_ads = soup.find_all("div", {"class": "search-item regular-ad"})
+        kijiji_ads = soup.find_all("li", {"class": "item result gtm-search-result"})
+        print(kijiji_ads)
 
         # If no ads use different class name
         if not kijiji_ads:
             kijiji_ads = soup.find_all("div", {"class": "search-item"})
 
         # Find all third-party ads to skip them
-        third_party_ads = soup.find_all("div", {"class": "third-party"})
+        # third_party_ads = soup.find_all("div", {"class": "third-party"})
 
         # Use different class name if no third party ads found
-        if not third_party_ads:
-            third_party_ads = soup.find_all(
-                "div", {"class": "search-item showcase top-feature"})
+        # if not third_party_ads:
+        #    third_party_ads = soup.find_all(
+        #        "div", {"class": "search-item showcase top-feature"})
 
-        for ad in third_party_ads:
-            third_party_ad_id = KijijiAd(ad).id
-            self.third_party_ads.append(third_party_ad_id)
+        # for ad in third_party_ads:
+        #    third_party_ad_id = KijijiAd(ad).id
+        #    self.third_party_ads.append(third_party_ad_id)
 
         # Create a dictionary of all ads with ad id being the key
         for ad in kijiji_ads:
